@@ -3,3 +3,15 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+.jumbotron {
+	background-color: #222222 !important; 
+}
+
+th {
+	color: #FFF;
+}
+
+h4 {
+	color: #FFF !important;
+}
