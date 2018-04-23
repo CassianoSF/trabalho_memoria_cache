@@ -9,17 +9,16 @@ class App extends Component {
 
     this.handleChange = this.handleChange.bind(this)
     this.generate = this.generate.bind(this)
-    this.onDrag = this.onDrag.bind(this)
-    this.onDrop = this.onDrop.bind(this)
+    this.onDragOver = this.onDragOver.bind(this)
+    this.onMouseOut = this.onMouseOut.bind(this)
 
 
     this.state = {
       cache: this.generate(16),
-      principal: this.generate(256),
+      main: this.generate(256),
       estatisticas: {},
-      endereco_leitura: '',
-      endereco_escrita: '',
-      Data: ''
+      over:  {tag: null, data: null},
+      click: {tag: null, data: null},
     } 
 
   }
@@ -33,7 +32,7 @@ class App extends Component {
     )})
   }
 
-  read(){
+  statistics(){
 
   }
 
@@ -41,15 +40,51 @@ class App extends Component {
 
   }
 
-  statistics(){
+  read(){
+    let reg_tag = this.state.register.tag
 
+    //HIT
+    if (this.state.cache[reg_tag]){ 
+      this.setState ({register: this.state.cache[reg_tag]})
+    }
+    //MISS
+    else { 
+      this.randomTrade(this.state.memory[reg_tag])
+    }
   }
 
-  onDrag(event){
+  randomTrade(new_block){
+    let new_state = this.state.cache.map((same_block, index) => {
+      if (index === parseInt(Math.random() * 16)){
+        return new_block
+      }else{
+        return same_block
+      }
+      this.setState({
+        cache: new_state,
+        register: new_block
+      })
+    })
   }
 
-  onDrop(event){
-    console.log(event.target)
+  onDragOver(block){
+    this.setState({
+      over: block
+    })
+  }
+
+  onDragEnd(block){
+    if(block.memory == "main"){
+      this.state.cache
+    }else{
+
+    }
+  }
+
+  onMouseOut(block){
+    this.setState({
+      click: {tag: null, data: null}
+    })
   }
 
   handleChange(event) {
@@ -73,60 +108,72 @@ class App extends Component {
     let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)"
     } 
     return (
-        <tr draggable="true" style={style} onDrag={this.onDrag} onDrop={this.onDrop}>
-            <th block={block.tag}>{block.tag}</th>
-            {block.words.map(word => this.word(word, block))}
+        <tr block={block.tag} 
+            draggable="true" 
+            style={style} 
+            onDragOver={() => this.onDragOver(block)}
+            onDragEnd={() => this.onDragEnd(block)}>
+
+          <th>{block.tag}</th>
+          {block.words.map(word => this.word(word, block))}
         </tr>
     )
   }
 
   render() {
+    console.log(this.state.cache)
     return (
         <Container>
-            <Jumbotron>
-                <Form>
-                	<Row>
-	                	<Col/>
-	                	<Col md="4">
-		                    <FormGroup>
-		                        <Input 
-		                            type="text" 
-		                            name="endereco_leitura" 
-		                            placeholder="Tag" 
-		                            value={this.state.endereco_leitura} 
-		                            onChange={this.handleChange} 
-		                        />
-		                    </FormGroup>
-		                    <Button>Ler</Button>
-	                	</Col>
-	                	<Col/>
-	                	<Col md="4">
-		                    <FormGroup>
-		                        <Input 
-		                            type="text" 
-		                            name="endereco_escrita" 
-		                            placeholder="Tag" 
-		                            value={this.state.endereco_escrita} 
-		                            onChange={this.handleChange}
-		                        />
-		                        <Input 
-		                            type="text" 
-		                            name="Data" 
-		                            placeholder="Data" 
-		                            value={this.state.Data} 
-		                            onChange={this.handleChange}
-		                        />
-		                    </FormGroup>
-		                    <Button>Escrever</Button>
-	                	</Col>
-	                	<Col/>
-	                </Row>
-                </Form>
-            </Jumbotron>
-            <Row>
+            <h4>Statistics</h4>
+            <ListGroup>
+              <ListGroupItem>Numero de acessos:</ListGroupItem>
+              <ListGroupItem>Numero de acertos:</ListGroupItem>
+              <ListGroupItem>Numero de falhas:</ListGroupItem>
+              <ListGroupItem>Numero de leituras:</ListGroupItem>
+              <ListGroupItem>Numero de escritas:</ListGroupItem>
+              <ListGroupItem>Numero de acertos na leitura:</ListGroupItem>
+              <ListGroupItem>Numero de acertos na escrita:</ListGroupItem>
+              <ListGroupItem>Numero de falhas na leituras:</ListGroupItem>
+              <ListGroupItem>Numero de falhas na escrita:</ListGroupItem>
+            </ListGroup>
+            <Row className="m-4">
+
+                <Col md={{size:"4", offset: 0}}>
+                  <Jumbotron>
+                    <h4>Read/Write</h4>
+                    <FormGroup>
+                      <Label className="m-4" for="examplePassword">Tag</Label>
+                      <Input type="text" name="tag" placeholder="00010101" />
+                      <Label className="m-4" for="examplePassword">Data</Label>
+                      <Input type="text" name="tag" placeholder="10F2A422" />
+                    </FormGroup>
+                    <Button className="m-2">Read</Button>
+                    <Button className="m-2">Write</Button>
+                    <Button className="m-2">Simulate</Button>
+                  </Jumbotron>
+                </Col>
+            
+                <Col md={{size:"4", offset: 0}}>
+                  <Jumbotron>
+                      <h4>Cache Memory</h4>
+                      <Table>
+                          <thead>
+                              <tr>
+                                  <th>Tag</th>
+                                  <th>Data</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {this.state.cache.map(block => this.block(block, "cache"))}
+                          </tbody>
+                      </Table>
+                  </Jumbotron>
+
+                </Col>
+
                 <Col md={{size:"4", offset: 0}}>
                 	<Jumbotron>
-	                    <h4>Memoria Cache</h4>
+	                    <h4>Main Memory</h4>
 	                    <Table>
 	                        <thead>
 	                            <tr>
@@ -135,40 +182,7 @@ class App extends Component {
 	                            </tr>
 	                        </thead>
 	                        <tbody>
-	                            {this.state.cache.map(block => this.block(block, "cache"))}
-	                        </tbody>
-	                    </Table>
-                	</Jumbotron>
-
-                </Col>
-
-                <Col md={{size:"4", offset: 0}}>
-                  <h4>Estatísticas</h4>
-                  <ListGroup>
-                    <ListGroupItem>Numero de acessos:</ListGroupItem>
-                    <ListGroupItem>Numero de acertos:</ListGroupItem>
-                    <ListGroupItem>Numero de falhas:</ListGroupItem>
-                    <ListGroupItem>Numero de leituras:</ListGroupItem>
-                    <ListGroupItem>Numero de escritas:</ListGroupItem>
-                    <ListGroupItem>Numero de acertos na leitura:</ListGroupItem>
-                    <ListGroupItem>Numero de acertos na escrita:</ListGroupItem>
-                    <ListGroupItem>Numero de falhas na leituras:</ListGroupItem>
-                    <ListGroupItem>Numero de falhas na escrita:</ListGroupItem>
-                  </ListGroup>
-                </Col>
-
-                <Col md={{size:"4", offset: 0}}>
-                	<Jumbotron>
-	                    <h4>Memoria Principal</h4>
-	                    <Table>
-	                        <thead>
-	                            <tr>
-	                                <th>Tag</th>
-	                                <th>Data</th>
-	                            </tr>
-	                        </thead>
-	                        <tbody>
-	                            {this.state.principal.map(block => this.block(block, "principal"))}
+	                            {this.state.main.map(block => this.block(block, "main"))}
 	                        </tbody>
 	                    </Table>
                 	</Jumbotron>
