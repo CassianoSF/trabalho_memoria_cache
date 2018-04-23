@@ -8,17 +8,20 @@ class App extends Component {
     super(props);
 
     this.handleChange = this.handleChange.bind(this)
-    this.generate = this.generate.bind(this)
-    this.onDragOver = this.onDragOver.bind(this)
-    this.onMouseOut = this.onMouseOut.bind(this)
+    this.generate     = this.generate.bind(this)
+    this.onDragOver   = this.onDragOver.bind(this)
+    this.handleChange = this.handleChange.bind(this)
+    this.onDrag       = this.onDrag.bind(this)
+    this.onMouseDown  = this.onMouseDown.bind(this)
+    this.onMouseUp    = this.onMouseUp.bind(this)
 
 
     this.state = {
       cache: this.generate(16),
       main: this.generate(256),
-      estatisticas: {},
-      over:  {tag: null, data: null},
-      click: {tag: null, data: null},
+      statistics: {},
+      over:     {tag: null, data: null},
+      register: {tag: null, data: null}
     } 
 
   }
@@ -27,68 +30,93 @@ class App extends Component {
     return [...Array(n_blocks).keys()].map( (i, index) =>  { return (
       {
           tag: ("00000000" + index.toString(2)).slice(-8),
-          words: [...Array(1).keys()].map(i => Math.random().toString(16).substring(7).toUpperCase() )
+          data: Math.random().toString(16).substring(7).toUpperCase()
       }
     )})
   }
 
-  statistics(){
-
-  }
-
   write(){
-
+    this.randomTrade(this.state.register)
+    let new_state = this.state.main.map((same_block) => {
+      if (same_block.tag === this.state.over.tag){
+        return {tag: this.state.over.tag, data: this.state.register.data}
+      }else{
+        return same_block
+      }
+    })
+    this.setState({
+      main: new_state
+    })
   }
 
   read(){
     let reg_tag = this.state.register.tag
 
     //HIT
-    if (this.state.cache[reg_tag]){ 
-      this.setState ({register: this.state.cache[reg_tag]})
+    let on_cache = this.state.cache.filter(i => i.tag === reg_tag)[0]
+    if (on_cache){ 
+
     }
     //MISS
     else { 
-      this.randomTrade(this.state.memory[reg_tag])
+      this.randomTrade(this.state.main.filter(i => i.tag === reg_tag)[0])
     }
   }
 
   randomTrade(new_block){
+    let rand = parseInt(Math.random() * 16)
     let new_state = this.state.cache.map((same_block, index) => {
-      if (index === parseInt(Math.random() * 16)){
+      if (index === rand){
         return new_block
       }else{
         return same_block
       }
-      this.setState({
-        cache: new_state,
-        register: new_block
-      })
     })
-  }
-
-  onDragOver(block){
     this.setState({
-      over: block
+      cache: new_state,
+      register: new_block
     })
   }
 
-  onDragEnd(block){
-    if(block.memory == "main"){
-      this.state.cache
-    }else{
+  onDragOver(block, type){
+    this.setState({
+      over: block,
+      type: type
+    })
+  }
 
+  onDrag(block){
+    this.setState({
+      register: block
+    })
+  }
+
+  onDragEnd(block, type){
+    if(type !== this.state.type){
+      if(type === "main"){
+        this.read()
+      }else{
+        this.write()
+      }
     }
   }
 
-  onMouseOut(block){
+  onMouseDown(block, type){
     this.setState({
-      click: {tag: null, data: null}
+      register: block
     })
   }
 
+  onMouseUp(block, type){
+    this.read()
+  }
+
   handleChange(event) {
-    this.setState({[event.target.name]: event.target.value});
+    this.setState({
+      register: {
+        [event.target.name]: event.target.value
+      }
+    });
   }
 
   handleSubmit(event) {
@@ -96,8 +124,8 @@ class App extends Component {
     event.preventDefault();
   }
 
-  word(word, block){
-    return(<th block={block.tag}>{word}</th>)
+  word(block){
+    return(<th block={block.tag}>{block.data}</th>)
   }
 
   block(block, type){
@@ -105,23 +133,27 @@ class App extends Component {
     let r = tag_n
     let g = 50 - tag_n
     let b = 33
-    let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)"
-    } 
+    let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)" } 
     return (
         <tr block={block.tag} 
             draggable="true" 
             style={style} 
-            onDragOver={() => this.onDragOver(block)}
-            onDragEnd={() => this.onDragEnd(block)}>
+            onDragOver={() => this.onDragOver(block, type)}
+            onDragEnd={() =>  this.onDragEnd(block, type)}
+            onDrag={() => this.onDrag(block)}
+            onMouseDown={() => this.onMouseDown(block)}
+            onMouseUp={() => this.onMouseUp(block)}
+
+            >
 
           <th>{block.tag}</th>
-          {block.words.map(word => this.word(word, block))}
+          {this.word(block)}
         </tr>
     )
   }
 
   render() {
-    console.log(this.state.cache)
+    console.log(this.state.register)
     return (
         <Container>
             <h4>Statistics</h4>
@@ -143,9 +175,9 @@ class App extends Component {
                     <h4>Read/Write</h4>
                     <FormGroup>
                       <Label className="m-4" for="examplePassword">Tag</Label>
-                      <Input type="text" name="tag" placeholder="00010101" />
+                      <Input onChange={this.handleChange} value={this.state.register.tag} type="text" name="tag" placeholder="00010101" />
                       <Label className="m-4" for="examplePassword">Data</Label>
-                      <Input type="text" name="tag" placeholder="10F2A422" />
+                      <Input onChange={this.handleChange} value={this.state.register.data} type="text" name="data" placeholder="10F2A422" />
                     </FormGroup>
                     <Button className="m-2">Read</Button>
                     <Button className="m-2">Write</Button>
