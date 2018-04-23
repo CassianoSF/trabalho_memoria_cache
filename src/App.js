@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-
+import update from 'react-addons-update';
 import {Jumbotron, Table, Container, Row, Col, Form, FormGroup, Label, Input, Button} from 'reactstrap'
 import  { ListGroup, ListGroupItem }  from 'reactstrap'
 
@@ -9,11 +9,12 @@ class App extends Component {
 
     this.handleChange = this.handleChange.bind(this)
     this.generate     = this.generate.bind(this)
-    this.onDragOver   = this.onDragOver.bind(this)
+    this.onDragEnter  = this.onDragEnter.bind(this)
     this.handleChange = this.handleChange.bind(this)
-    this.onDrag       = this.onDrag.bind(this)
     this.onMouseDown  = this.onMouseDown.bind(this)
     this.onMouseUp    = this.onMouseUp.bind(this)
+    this.write        = this.write.bind(this)
+    this.read         = this.read.bind(this)
 
 
     this.state = {
@@ -21,7 +22,7 @@ class App extends Component {
       main: this.generate(256),
       statistics: {},
       over:     {tag: null, data: null},
-      register: {tag: null, data: null}
+      register: {tag: "00000000", data: "FFFFFFFF"}
     } 
 
   }
@@ -36,16 +37,26 @@ class App extends Component {
   }
 
   write(){
-    this.randomTrade(this.state.register)
-    let new_state = this.state.main.map((same_block) => {
-      if (same_block.tag === this.state.over.tag){
-        return {tag: this.state.over.tag, data: this.state.register.data}
+    if (!this.state.cache.filter(i => i.tag === this.state.register.tag)[0]){
+      this.randomTrade(this.state.register)
+    }else{
+      let new_cache = this.state.cache.map((block) => {
+        if (block.tag == this.state.register.tag){return this.state.register}
+        else {return block}
+      })
+      this.setState({
+        cache: new_cache
+      })
+    }
+    let new_main = this.state.main.map((block) => {
+      if (block.tag === this.state.register.tag){
+        return {tag: this.state.register.tag, data: this.state.register.data}
       }else{
-        return same_block
+        return block
       }
     })
     this.setState({
-      main: new_state
+      main: new_main
     })
   }
 
@@ -78,16 +89,11 @@ class App extends Component {
     })
   }
 
-  onDragOver(block, type){
+  onDragEnter(event, block, type){
     this.setState({
       over: block,
-      type: type
-    })
-  }
-
-  onDrag(block){
-    this.setState({
-      register: block
+      type: type,
+      register: {tag: block.tag, data: this.state.register.data}
     })
   }
 
@@ -111,11 +117,19 @@ class App extends Component {
     this.read()
   }
 
+
+  handleErrors(target){
+    return (
+      (target.name==="tag" && 
+        (parseInt(target.value, 2)>255 || target.value.split("").filter(i => i != "0" && i != "1")[0]) )
+      || target.value.length > 8 
+    )
+  }
+  
   handleChange(event) {
+    if (this.handleErrors(event.target)){return alert("Número inválido em "+ event.target.name)}
     this.setState({
-      register: {
-        [event.target.name]: event.target.value
-      }
+      register: update(this.state.register, {[event.target.name]: {$set: event.target.value.toUpperCase()}})
     });
   }
 
@@ -138,11 +152,10 @@ class App extends Component {
         <tr block={block.tag} 
             draggable="true" 
             style={style} 
-            onDragOver={() => this.onDragOver(block, type)}
+            onDragEnter={(event) => this.onDragEnter(event, block, type)}
             onDragEnd={() =>  this.onDragEnd(block, type)}
-            onDrag={() => this.onDrag(block)}
-            onMouseDown={() => this.onMouseDown(block)}
-            onMouseUp={() => this.onMouseUp(block)}
+            onMouseDown={() => this.onMouseDown (block)}
+            onMouseUp={() => this.onMouseUp (block)}
 
             >
 
@@ -153,7 +166,6 @@ class App extends Component {
   }
 
   render() {
-    console.log(this.state.register)
     return (
         <Container>
             <h4>Statistics</h4>
@@ -175,12 +187,12 @@ class App extends Component {
                     <h4>Read/Write</h4>
                     <FormGroup>
                       <Label className="m-4" for="examplePassword">Tag</Label>
-                      <Input onChange={this.handleChange} value={this.state.register.tag} type="text" name="tag" placeholder="00010101" />
+                      <Input onChange={this.handleChange} value={this.state.register.tag} type="text" name="tag" />
                       <Label className="m-4" for="examplePassword">Data</Label>
-                      <Input onChange={this.handleChange} value={this.state.register.data} type="text" name="data" placeholder="10F2A422" />
+                      <Input onChange={this.handleChange} value={this.state.register.data} type="text" name="data" />
                     </FormGroup>
-                    <Button className="m-2">Read</Button>
-                    <Button className="m-2">Write</Button>
+                    <Button onClick={this.read} className="m-2">Read</Button>
+                    <Button onClick={this.write} className="m-2">Write</Button>
                     <Button className="m-2">Simulate</Button>
                   </Jumbotron>
                 </Col>
