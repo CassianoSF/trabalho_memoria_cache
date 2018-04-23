@@ -16,22 +16,20 @@ class App extends Component {
     this.write        = this.write.bind(this)
     this.read         = this.read.bind(this)
 
-
     this.state = {
-      cache: this.generate(16),
-      main: this.generate(256),
+      cache: this.generate(16, true),
+      main: this.generate(256, false),
       statistics: {},
       over:     {tag: null, data: null},
       register: {tag: "00000000", data: "FFFFFFFF"}
-    } 
-
+    }
   }
 
-  generate(n_blocks){
+  generate(n_blocks, cache){
     return [...Array(n_blocks).keys()].map( (i, index) =>  { return (
       {
-          tag: ("00000000" + index.toString(2)).slice(-8),
-          data: Math.random().toString(16).substring(7).toUpperCase()
+          tag: cache ? "" : ("00000000" + index.toString(2)).slice(-8),
+          data: cache ? "" : Math.random().toString(16).substring(7).toUpperCase()
       }
     )})
   }
