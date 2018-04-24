@@ -111,8 +111,7 @@ class App extends Component {
 
   handleErrors(target){
     return (
-      (target.name==="tag" && 
-        (parseInt(target.value, 2)>255 || target.value.split("").filter(i => i != "0" && i != "1")[0]) )
+      (target.name==="tag" && target.value.split("").filter(i => i != "0" && i != "1")[0])
     )
   }
   
@@ -180,9 +179,9 @@ class App extends Component {
                     <h4>Read/Write</h4>
                     <FormGroup>
                       <Label className="m-4" for="examplePassword">Tag</Label>
-                      <Input onChange={this.handleChange} value={this.state.register.tag} type="text" name="tag" />
+                      <Input onKeyPress={(e) => e.key === 'Enter' ? this.read() : null } onChange={this.handleChange} value={this.state.register.tag} type="text" name="tag" />
                       <Label className="m-4" for="examplePassword">Data</Label>
-                      <Input onChange={this.handleChange} value={this.state.register.data} type="text" name="data" />
+                      <Input onKeyPress={(e) => e.key === 'Enter' ? this.write() : null } onChange={this.handleChange} value={this.state.register.data} type="text" name="data" />
                     </FormGroup>
                     <Button onClick={this.read} className="m-2">Read</Button>
                     <Button onClick={this.write} className="m-2">Write</Button>
