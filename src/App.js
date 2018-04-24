@@ -29,12 +29,12 @@ class App extends Component {
     }
   }
 
-  simulate(read_or_write){
-    [...Array(100).keys()].map((i, index) => {
+  simulate(read_or_write, sequential){
+    [...Array(20).keys()].map((i, index) => {
       setTimeout( () => {
         this.setState({
           register: {
-            tag: ("00000000" + parseInt(Math.random()*(2**8)).toString(2)).slice(-8),
+            tag: sequential ? ("00000000" + index.toString(2)).slice(-8) : ("00000000" + parseInt(Math.random()*(2**8)).toString(2)).slice(-8),
             data: ("00000000" + parseInt(Math.random()*(2**32)).toString(16)).slice(-8)
           }
         })
@@ -200,8 +200,10 @@ class App extends Component {
                     </FormGroup>
                     <Button onClick={this.read} className="m-2">Read</Button>
                     <Button onClick={this.write} className="m-2">Write</Button>
-                    <Button onClick={() => this.simulate(this.read)} className="m-2">Simulate reads</Button>
-                    <Button onClick={() => this.simulate(this.write)} className="m-2">Simulate writes</Button>
+                    <Button onClick={() => this.simulate(this.read, true)} className="m-2">Seguential reads</Button>
+                    <Button onClick={() => this.simulate(this.write, true)} className="m-2">Seguential writes</Button>
+                    <Button onClick={() => this.simulate(this.read, false)} className="m-2">Random reads</Button>
+                    <Button onClick={() => this.simulate(this.write, false)} className="m-2">Random writes</Button>
                   </Jumbotron>
                 </Col>
             
