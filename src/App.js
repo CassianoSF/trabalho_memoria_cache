@@ -17,11 +17,14 @@ class App extends Component {
     this.read         = this.read.bind(this)
 
     this.state = {
-      cache: this.generate(16, true),
-      main: this.generate(256, false),
-      statistics: {},
-      over:     {tag: null, data: null},
-      register: {tag: "00000000", data: "FFFFFFFF"}
+          cache: this.generate(16, true),
+           main: this.generate(256, false),
+     statistics: {},
+       register: {tag: "00000000", data: "FFFFFFFF"},
+           hits: 0,
+         misses: 0,
+          reads: 0,
+         writes: 0,
     }
   }
 
@@ -35,61 +38,51 @@ class App extends Component {
   }
 
   write(){
-    if (!this.state.cache.filter(i => i.tag === this.state.register.tag)[0]){
-      this.randomTrade(this.state.register)
+    let reg = this.state.register
+    if (!this.state.cache.filter(i => i.tag === reg.tag)[0]){
+      this.randomTrade(reg)
     }else{
-      let new_cache = this.state.cache.map((block) => {
-        if (block.tag == this.state.register.tag){return this.state.register}
-        else {return block}
-      })
       this.setState({
-        cache: new_cache
+        cache: this.merge(this.state.cache, reg)
       })
     }
-    let new_main = this.state.main.map((block) => {
-      if (block.tag === this.state.register.tag){
-        return {tag: this.state.register.tag, data: this.state.register.data}
-      }else{
-        return block
-      }
-    })
     this.setState({
-      main: new_main
+      main: this.merge(this.state.main, reg),
+      writes: this.state.writes + 1
     })
+  }
+
+  merge(memory, reg){
+    return memory.map(block => (block.tag == reg.tag) ? reg : block)
   }
 
   read(){
     let reg_tag = this.state.register.tag
+    let on_cache = this.state.cache.filter(i => i.tag === reg_tag)[0]
 
     //HIT
-    let on_cache = this.state.cache.filter(i => i.tag === reg_tag)[0]
     if (on_cache){ 
-
+      let statistics = {reads: this.state.reads+1, hits: this.state.hits+1 }
+      this.setState(statistics)
     }
     //MISS
     else { 
       this.randomTrade(this.state.main.filter(i => i.tag === reg_tag)[0])
+      let statistics = {reads: this.state.reads+1, misses: this.state.misses+1 }
+      this.setState(statistics)
     }
   }
 
   randomTrade(new_block){
     let rand = parseInt(Math.random() * 16)
-    let new_state = this.state.cache.map((same_block, index) => {
-      if (index === rand){
-        return new_block
-      }else{
-        return same_block
-      }
-    })
     this.setState({
-      cache: new_state,
+      cache: this.state.cache.map((block, index) => (index === rand) ? new_block : block ),
       register: new_block
     })
   }
 
   onDragEnter(event, block, type){
     this.setState({
-      over: block,
       type: type,
       register: {tag: block.tag, data: this.state.register.data}
     })
@@ -120,15 +113,17 @@ class App extends Component {
     return (
       (target.name==="tag" && 
         (parseInt(target.value, 2)>255 || target.value.split("").filter(i => i != "0" && i != "1")[0]) )
-      || target.value.length > 8 
     )
   }
   
   handleChange(event) {
-    if (this.handleErrors(event.target)){return alert("Número inválido em "+ event.target.name)}
-    this.setState({
-      register: update(this.state.register, {[event.target.name]: {$set: event.target.value.toUpperCase()}})
-    });
+    let value = event.target.value.match(/[0-9A-Fa-f]{0,10}/g)[0].toUpperCase()
+    let hex   = ("00000000" + value).slice(-8)
+    if (!this.handleErrors(event.target)){
+      this.setState({
+        register: update(this.state.register, {[event.target.name]: {$set: hex}})
+      });
+    }
   }
 
   handleSubmit(event) {
@@ -168,15 +163,15 @@ class App extends Component {
         <Container>
             <h4>Statistics</h4>
             <ListGroup>
-              <ListGroupItem>Numero de acessos:</ListGroupItem>
-              <ListGroupItem>Numero de acertos:</ListGroupItem>
-              <ListGroupItem>Numero de falhas:</ListGroupItem>
-              <ListGroupItem>Numero de leituras:</ListGroupItem>
-              <ListGroupItem>Numero de escritas:</ListGroupItem>
-              <ListGroupItem>Numero de acertos na leitura:</ListGroupItem>
-              <ListGroupItem>Numero de acertos na escrita:</ListGroupItem>
-              <ListGroupItem>Numero de falhas na leituras:</ListGroupItem>
-              <ListGroupItem>Numero de falhas na escrita:</ListGroupItem>
+              <ListGroupItem>Numero de acessos:            {this.state.reads + this.state.writes}</ListGroupItem>
+              <ListGroupItem>Numero de acertos:            {this.state.hits} </ListGroupItem>
+              <ListGroupItem>Numero de falhas:             {this.state.misses}</ListGroupItem>
+              <ListGroupItem>Numero de leituras:           {this.state.reads} </ListGroupItem>
+              <ListGroupItem>Numero de escritas:           {this.state.reads}</ListGroupItem>
+              <ListGroupItem>Numero de acertos na leitura: {this.state.hits}</ListGroupItem>
+              <ListGroupItem>Numero de acertos na escrita: {this.state.writes}</ListGroupItem>
+              <ListGroupItem>Numero de falhas na leituras: {this.state.misses}</ListGroupItem>
+              <ListGroupItem>Numero de falhas na escrita:  {0}</ListGroupItem>
             </ListGroup>
             <Row className="m-4">
 
