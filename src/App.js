@@ -15,6 +15,7 @@ class App extends Component {
     this.onMouseUp    = this.onMouseUp.bind(this)
     this.write        = this.write.bind(this)
     this.read         = this.read.bind(this)
+    this.simulate         = this.simulate.bind(this)
 
     this.state = {
           cache: this.generate(16, true),
@@ -26,6 +27,20 @@ class App extends Component {
           reads: 0,
          writes: 0,
     }
+  }
+
+  simulate(read_or_write){
+    [...Array(100).keys()].map((i, index) => {
+      setTimeout( () => {
+        this.setState({
+          register: {
+            tag: ("00000000" + parseInt(Math.random()*(2**8)).toString(2)).slice(-8),
+            data: ("00000000" + parseInt(Math.random()*(2**32)).toString(16)).slice(-8)
+          }
+        })
+        read_or_write()
+      }, index * 100)
+    })
   }
 
   generate(n_blocks, cache){
@@ -185,7 +200,8 @@ class App extends Component {
                     </FormGroup>
                     <Button onClick={this.read} className="m-2">Read</Button>
                     <Button onClick={this.write} className="m-2">Write</Button>
-                    <Button className="m-2">Simulate</Button>
+                    <Button onClick={() => this.simulate(this.read)} className="m-2">Simulate reads</Button>
+                    <Button onClick={() => this.simulate(this.write)} className="m-2">Simulate writes</Button>
                   </Jumbotron>
                 </Col>
             
