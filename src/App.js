@@ -146,7 +146,7 @@ class App extends Component {
   }
 
   word(block){
-    return(<th block={block.tag}>{block.data}</th>)
+    return(<th block={block.tag}>{block.data && block.data.toUpperCase().match(/.{1,2}/g).join(" | ")}</th>)
   }
 
   block(block, type){
@@ -163,9 +163,7 @@ class App extends Component {
             onDragEnd={() =>  this.onDragEnd(block, type)}
             onMouseDown={() => this.onMouseDown (block)}
             onMouseUp={() => this.onMouseUp (block)}
-
             >
-
           <th>{block.tag}</th>
           {this.word(block)}
         </tr>
@@ -214,7 +212,7 @@ class App extends Component {
                           <thead>
                               <tr>
                                   <th>Tag</th>
-                                  <th>Data</th>
+                                  <th>D0 | D1 | D2 | D3</th>
                               </tr>
                           </thead>
                           <tbody>
@@ -232,7 +230,7 @@ class App extends Component {
 	                        <thead>
 	                            <tr>
 	                                <th>Tag</th>
-	                                <th>Data</th>
+	                                <th>00 | 01 | 10 | 11</th>
 	                            </tr>
 	                        </thead>
 	                        <tbody>
