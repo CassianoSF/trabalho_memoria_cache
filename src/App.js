@@ -146,7 +146,11 @@ class App extends Component {
   }
 
   word(block){
-    return(<th block={block.tag}>{block.data && block.data.toUpperCase().match(/.{1,2}/g).join(" | ")}</th>)
+    return(<th block={block.tag}>{block.data && block.data.match(/.{1,2}/g).join(" | ")}</th>)
+  }
+
+  cell(data, block){
+    return(<th block={block}>{data}</th>)
   }
 
   block(block, type){
@@ -154,20 +158,45 @@ class App extends Component {
     let r = tag_n
     let g = 50 - tag_n
     let b = 33
-    let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)" } 
-    return (
-        <tr block={block.tag} 
-            draggable="true" 
-            style={style} 
-            onDragEnter={(event) => this.onDragEnter(event, block, type)}
-            onDragEnd={() =>  this.onDragEnd(block, type)}
-            onMouseDown={() => this.onMouseDown (block)}
-            onMouseUp={() => this.onMouseUp (block)}
-            >
-          <th>{block.tag}</th>
-          {this.word(block)}
-        </tr>
-    )
+    let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)" }
+    if (type == "main"){
+      return(
+        block.data.match(/.{1,2}/g).map((cell, index) =>{
+          return(
+            <tr block={block.tag} 
+                draggable="true" 
+                style={style} 
+                onDragEnter={(event) => this.onDragEnter(event, block, type)}
+                onDragEnd={() =>  this.onDragEnd(block, type)}
+                onMouseDown={() => this.onMouseDown (block)}
+                onMouseUp={() => this.onMouseUp (block)}
+
+                >
+
+              <th>{block.tag + ("00" + index.toString(2)).slice(-2)}</th>
+              {this.cell(cell, block)}
+            </tr>
+
+          )
+        })
+      )
+    }else{
+      return (
+          <tr block={block.tag} 
+              draggable="true" 
+              style={style} 
+              onDragEnter={(event) => this.onDragEnter(event, block, type)}
+              onDragEnd={() =>  this.onDragEnd(block, type)}
+              onMouseDown={() => this.onMouseDown (block)}
+              onMouseUp={() => this.onMouseUp (block)}
+
+              >
+
+            <th>{block.tag}</th>
+            {this.word(block)}
+          </tr>
+      )
+    }
   }
 
   render() {
@@ -229,8 +258,8 @@ class App extends Component {
 	                    <Table>
 	                        <thead>
 	                            <tr>
-	                                <th>Tag</th>
-	                                <th>00 | 01 | 10 | 11</th>
+	                                <th>Address</th>
+	                                <th>Data</th>
 	                            </tr>
 	                        </thead>
 	                        <tbody>
