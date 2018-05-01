@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import update from 'react-addons-update';
-import {Jumbotron, Table, Container, Row, Col, Form, FormGroup, Label, Input, Button} from 'reactstrap'
+import {Jumbotron, Table, Container, Row, Col, FormGroup, Label, Input, Button} from 'reactstrap'
 import  { ListGroup, ListGroupItem }  from 'reactstrap'
 
 class App extends Component {
@@ -18,6 +18,7 @@ class App extends Component {
     this.write        = this.write.bind(this)
     this.read         = this.read.bind(this)
     this.simulate         = this.simulate.bind(this)
+    this.randomTrade = this.randomTrade.bind(this)
 
 
     this.state = {
@@ -26,7 +27,11 @@ class App extends Component {
      statistics: {},
        register: {address: "0000000000", data: "FF"},
            hits: 0,
+      read_hits: 0,
+     write_hits: 0,
          misses: 0,
+    read_misses: 0,
+   write_misses: 0,
           reads: 0,
          writes: 0,
     }
@@ -38,22 +43,23 @@ class App extends Component {
         this.setState({
           register: {
             address: sequential ? ("0000000000" + index.toString(2)).slice(-10) : ("0000000000" + parseInt(Math.random()*(2**10)).toString(2)).slice(-10),
-            data: ("00" + parseInt(Math.random()*(2**8)).toString(16)).slice(-8).toUpperCase()
+            data: ("00" + parseInt(Math.random()*(2**8)).toString(16)).slice(-2).toUpperCase()
           }
         })
         read_or_write()
       }, index * 100)
+      return
     })
   }
 
   generateCache(n_blocks, cache){
     return [...Array(n_blocks).keys()].map( (i, index) =>  { return (
       {
-          tag: ("00000000" + index.toString(2)).slice(-8),
-          d0: ("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
-          d1: ("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
-          d2: ("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
-          d3: ("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2)
+          tag: "", //("00000000" + index.toString(2)).slice(-8),
+          ["00"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
+          ["01"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
+          ["10"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
+          ["11"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2)
       }
     )})
   }
@@ -69,45 +75,87 @@ class App extends Component {
 
   write(){
     let reg = this.state.register
-    if (!this.state.cache.filter(i => i.tag === reg.tag.slice(0,8))[0]){
-      this.randomTrade(reg)
-    }else{
+    let on_cache =  this.state.cache.filter(frame => frame.tag === reg.address.slice(0,8))[0]
+
+    //HIT
+    if (on_cache){
       this.setState({
-        cache: this.merge(this.state.cache, reg)
+             cache: this.mergeCache(this.state.cache, reg),
+              main: this.mergeMain(this.state.main, reg),
+            writes: this.state.writes + 1,
+        write_hits: this.state.write_hits + 1,
+              hits: this.state.hits + 1
       })
     }
-    this.setState({
-      main: this.merge(this.state.main, reg),
-      writes: this.state.writes + 1
-    })
+
+    //MISS
+    else{
+      this.setState({
+             cache: this.randomTrade(this.state.main, reg),
+              main: this.mergeMain(this.state.main, reg),
+            writes: this.state.writes + 1,
+      write_misses: this.state.write_misses + 1,
+            misses: this.state.misses + 1
+      })
+    }
   }
 
   read(){
-    let reg_tag = this.state.register.tag
-    let on_cache = this.state.cache.filter(i => i.tag === reg_tag)[0]
+    let reg = this.state.register
+    let on_cache =  this.state.cache.filter(frame => frame.tag === reg.address.slice(0,8))[0]
 
     //HIT
     if (on_cache){ 
-      let statistics = {reads: this.state.reads+1, hits: this.state.hits+1 }
-      this.setState(statistics)
+      this.setState({
+          register: {address: reg.address, data: on_cache[reg.address.slice(-2)]},
+             reads: this.state.reads + 1,
+         read_hits: this.state.read_hits + 1,
+              hits: this.state.hits + 1
+      })
     }
+
     //MISS
-    else { 
-      this.randomTrade(this.state.main.filter(i => i.tag === reg_tag)[0])
-      let statistics = {reads: this.state.reads+1, misses: this.state.misses+1 }
-      this.setState(statistics)
+    else {
+      reg = this.state.main.filter(cell => cell.address === reg.address)[0]
+      this.setState({
+             cache: this.randomTrade(this.state.main, reg),
+          register: reg,
+             reads: this.state.reads + 1,
+       read_misses: this.state.read_misses + 1,
+            misses: this.state.misses + 1
+      })
     }
   }
 
-  merge(memory, reg){
-    return memory.map(block => (block.tag == reg.tag.slice(0,8)) ? reg : block)
+  mergeMain(main, reg){
+    return main.map(cell => (cell.address == reg.address) ? reg : cell)
   }
 
-  randomTrade(new_block){
+  mergeCache(cache, reg){
+    return cache.map(frame => {
+      if (frame.tag == reg.address.slice(0,8)){
+        return update(frame, {[reg.address.slice(-2)]: {$set: reg.data}})
+      }else{
+        return frame
+      }
+    })
+  }
+
+  randomTrade(main, reg){
     let rand = parseInt(Math.random() * 16)
-    this.setState({
-      cache: this.state.cache.map((block, index) => (index === rand) ? new_block : block ),
-      register: new_block
+    return this.state.cache.map((frame, index) => {
+      if(index === rand){
+        let new_frame = {
+          tag: reg.address.slice(0,8), 
+          ["00"]: main[ parseInt((reg.address.slice(0,8) + "00"), 2)].data,
+          ["01"]: main[ parseInt((reg.address.slice(0,8) + "01"), 2)].data,
+          ["10"]: main[ parseInt((reg.address.slice(0,8) + "10"), 2)].data,
+          ["11"]: main[ parseInt((reg.address.slice(0,8) + "11"), 2)].data
+        }
+        return update(new_frame, {[reg.address.slice(-2)]: {$set: reg.data}}) 
+      } else{
+        return frame
+      }
     })
   }
 
@@ -173,10 +221,10 @@ class App extends Component {
           onMouseUp={() => this.onMouseUp (block)}
           >
         <th>{block.tag}</th>
-        <th>{block.d0}</th>
-        <th>{block.d1}</th>
-        <th>{block.d2}</th>
-        <th>{block.d3}</th>
+        <th>{block["00"]}</th>
+        <th>{block["01"]}</th>
+        <th>{block["10"]}</th>
+        <th>{block["11"]}</th>
       </tr>
     )
   }
@@ -203,6 +251,8 @@ class App extends Component {
   }
 
   render() {
+    console.log(this.state.main)
+    console.log(this.state.cache)
     return (
         <Container>
             <h4>Statistics</h4>
