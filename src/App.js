@@ -35,11 +35,11 @@ class App extends Component {
         this.setState({
           register: {
             tag: sequential ? ("00000000" + index.toString(2)).slice(-8) : ("00000000" + parseInt(Math.random()*(2**8)).toString(2)).slice(-8),
-            data: ("00000000" + parseInt(Math.random()*(2**32)).toString(16)).slice(-8)
+            data: ("00000000" + parseInt(Math.random()*(2**32)).toString(16)).slice(-8).toUpperCase()
           }
         })
         read_or_write()
-      }, index * 100)
+      }, index * 120)
     })
   }
 
@@ -150,7 +150,7 @@ class App extends Component {
   }
 
   cell(data, block){
-    return(<th block={block}>{data}</th>)
+    return(<th block={block}>{("00"+data.toUpperCase()).slice(-2)}</th>)
   }
 
   block(block, type){
