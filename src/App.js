@@ -38,7 +38,7 @@ class App extends Component {
   }
 
   simulate(read_or_write, sequential){
-    [...Array(20).keys()].map((i, index) => {
+    [...Array(100).keys()].map((i, index) => {
       setTimeout( () => {
         this.setState({
           register: {
