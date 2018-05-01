@@ -15,16 +15,16 @@ class App extends Component {
 
     this.handleChangeAddress = this.handleChangeAddress.bind(this)
     this.handleChangeData    = this.handleChangeData.bind(this)
-    this.write        = this.write.bind(this)
-    this.read         = this.read.bind(this)
-    this.simulate         = this.simulate.bind(this)
-    this.randomTrade = this.randomTrade.bind(this)
+    this.write               = this.write.bind(this)
+    this.read                = this.read.bind(this)
+    this.simulate            = this.simulate.bind(this)
+    this.randomTrade         = this.randomTrade.bind(this)
+    this.clear               = this.clear.bind(this)
 
 
     this.state = {
           cache: this.generateCache(16, true),
            main: this.generateMain(256*4),
-     statistics: {},
        register: {address: "0000000000", data: "FF"},
            hits: 0,
       read_hits: 0,
@@ -37,29 +37,41 @@ class App extends Component {
     }
   }
 
+  clear(){
+    this.setState({
+           hits: 0,
+      read_hits: 0,
+     write_hits: 0,
+         misses: 0,
+    read_misses: 0,
+   write_misses: 0,
+          reads: 0,
+         writes: 0,
+    })
+  }
+
   simulate(read_or_write, sequential){
     [...Array(100).keys()].map((i, index) => {
       setTimeout( () => {
         this.setState({
           register: {
-            address: sequential ? ("0000000000" + index.toString(2)).slice(-10) : ("0000000000" + parseInt(Math.random()*(2**10)).toString(2)).slice(-10),
+            address: ("0000000000" + (sequential ? index : parseInt(Math.random()*(2**10))).toString(2)).slice(-10),
             data: ("00" + parseInt(Math.random()*(2**8)).toString(16)).slice(-2).toUpperCase()
           }
         })
         read_or_write()
       }, index * 100)
-      return
     })
   }
 
   generateCache(n_blocks, cache){
     return [...Array(n_blocks).keys()].map( (i, index) =>  { return (
       {
-          tag: "", //("00000000" + index.toString(2)).slice(-8),
-          ["00"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
-          ["01"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
-          ["10"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2),
-          ["11"]:  "", //("00" + Math.random().toString(16).substring(13).toUpperCase()).slice(-2)
+             tag: "",
+          ["00"]: "",
+          ["01"]: "",
+          ["10"]: "",
+          ["11"]: "",
       }
     )})
   }
@@ -128,12 +140,12 @@ class App extends Component {
   }
 
   mergeMain(main, reg){
-    return main.map(cell => (cell.address == reg.address) ? reg : cell)
+    return main.map(cell => (cell.address === reg.address) ? reg : cell)
   }
 
   mergeCache(cache, reg){
     return cache.map(frame => {
-      if (frame.tag == reg.address.slice(0,8)){
+      if (frame.tag === reg.address.slice(0,8)){
         return update(frame, {[reg.address.slice(-2)]: {$set: reg.data}})
       }else{
         return frame
@@ -159,33 +171,6 @@ class App extends Component {
     })
   }
 
-  // onDragEnter(event, block, type){
-  //   this.setState({
-  //     type: type,
-  //     register: {tag: block.tag, data: this.state.register.data}
-  //   })
-  // }
-
-  // onDragEnd(block, type){
-  //   if(type !== this.state.type){
-  //     if(type === "main"){
-  //       this.read()
-  //     }else{
-  //       this.write()
-  //     }
-  //   }
-  // }
-
-  // onMouseDown(block, type){
-  //   this.setState({
-  //     register: block
-  //   })
-  // }
-
-  // onMouseUp(block, type){
-  //   this.read()
-  // }
-  
   handleChangeAddress(event) {
     let value = ("0000000000" + event.target.value.match(/[0-1]{0,11}/g)[0].toUpperCase()).slice(-10)
     this.setState({
@@ -200,26 +185,10 @@ class App extends Component {
     });
   }
 
-  handleSubmit(event) {
-    alert('A name was submitted: ' + this.state.value);
-    event.preventDefault();
-  }
-
   frame(block){
-    let tag_n = parseInt(block.tag, 2)
-    let r = tag_n
-    let g = 50 - tag_n
-    let b = 33
-    let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)" }
+    let val = parseInt(block.tag, 2)
     return (
-      <tr block={block.tag} 
-          draggable="true" 
-          style={style} 
-          onDragEnter={(event) => this.onDragEnter(event, block, "cache")}
-          onDragEnd={() =>  this.onDragEnd(block, "cache")}
-          onMouseDown={() => this.onMouseDown (block)}
-          onMouseUp={() => this.onMouseUp (block)}
-          >
+      <tr style={this.style(val)}>
         <th>{block.tag}</th>
         <th>{block["00"]}</th>
         <th>{block["01"]}</th>
@@ -230,24 +199,20 @@ class App extends Component {
   }
 
   cell(cell){
-    let tag_n = parseInt(parseInt(cell.address, 2)/4)
-    let r = tag_n
-    let g = 50 - tag_n
-    let b = 33
-    let style = { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)" }
+    let val = parseInt(parseInt(cell.address, 2)/4)
      return (
-      <tr cell={cell.address} 
-          draggable="true" 
-          style={style} 
-          onDragEnter={(event) => this.onDragEnter(event, cell, "main")}
-          onDragEnd={() =>  this.onDragEnd(cell, "main")}
-          onMouseDown={() => this.onMouseDown (cell)}
-          onMouseUp={() => this.onMouseUp (cell)}
-          >
+      <tr style={this.style(val)}>
         <th>{cell.address}</th>
         <th>{cell.data}</th>
       </tr>
     )
+  }
+
+  style(val){
+    let r = val
+    let g = 50 - val
+    let b = 33
+    return { backgroundColor: "rgba(" + r +","+ g +","+ b + ", 1)" }
   }
 
   render() {
@@ -284,6 +249,7 @@ class App extends Component {
                     <Button onClick={() => this.simulate(this.write, true)} className="m-2">Seguential writes</Button>
                     <Button onClick={() => this.simulate(this.read, false)} className="m-2">Random reads</Button>
                     <Button onClick={() => this.simulate(this.write, false)} className="m-2">Random writes</Button>
+                    <Button onClick={this.clear} className="m-2">Clear Statistics</Button>
                   </Jumbotron>
                 </Col>
             
