@@ -261,11 +261,11 @@ class App extends Component {
               <ListGroupItem>Numero de acertos:            {this.state.hits} </ListGroupItem>
               <ListGroupItem>Numero de falhas:             {this.state.misses}</ListGroupItem>
               <ListGroupItem>Numero de leituras:           {this.state.reads} </ListGroupItem>
-              <ListGroupItem>Numero de escritas:           {this.state.reads}</ListGroupItem>
-              <ListGroupItem>Numero de acertos na leitura: {this.state.hits}</ListGroupItem>
-              <ListGroupItem>Numero de acertos na escrita: {this.state.writes}</ListGroupItem>
-              <ListGroupItem>Numero de falhas na leituras: {this.state.misses}</ListGroupItem>
-              <ListGroupItem>Numero de falhas na escrita:  {0}</ListGroupItem>
+              <ListGroupItem>Numero de escritas:           {this.state.writes}</ListGroupItem>
+              <ListGroupItem>Numero de acertos na leitura: {this.state.read_hits}</ListGroupItem>
+              <ListGroupItem>Numero de acertos na escrita: {this.state.write_hits}</ListGroupItem>
+              <ListGroupItem>Numero de falhas na leituras: {this.state.read_misses}</ListGroupItem>
+              <ListGroupItem>Numero de falhas na escrita:  {this.state.write_misses}</ListGroupItem>
             </ListGroup>
             <Row className="m-4">
 
