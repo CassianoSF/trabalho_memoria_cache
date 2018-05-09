@@ -102,8 +102,9 @@ class App extends Component {
 
     //MISS
     else{
+      let free = this.state.cache.map((frame, index) => frame.tag[0] ? null : index ).filter(i => Number.isInteger(i))[0]
       this.setState({
-             cache: this.randomTrade(this.state.main, reg),
+             cache: this.randomTrade(this.state.main, reg, free),
               main: this.mergeMain(this.state.main, reg),
             writes: this.state.writes + 1,
       write_misses: this.state.write_misses + 1,
@@ -128,9 +129,10 @@ class App extends Component {
 
     //MISS
     else {
+      let free = this.state.cache.map((frame, index) => frame.tag[0] ? null : index ).filter(i => Number.isInteger(i))[0]
       reg = this.state.main.filter(cell => cell.address === reg.address)[0]
       this.setState({
-             cache: this.randomTrade(this.state.main, reg),
+             cache: this.randomTrade(this.state.main, reg, free),
           register: reg,
              reads: this.state.reads + 1,
        read_misses: this.state.read_misses + 1,
@@ -153,10 +155,10 @@ class App extends Component {
     })
   }
 
-  randomTrade(main, reg){
+  randomTrade(main, reg, free){
     let rand = parseInt(Math.random() * 16)
     return this.state.cache.map((frame, index) => {
-      if(index === rand){
+      if(index === (Number.isInteger(free) ? free : rand)){
         let new_frame = {
           tag: reg.address.slice(0,8), 
           ["00"]: main[ parseInt((reg.address.slice(0,8) + "00"), 2)].data,
@@ -216,8 +218,6 @@ class App extends Component {
   }
 
   render() {
-    console.log(this.state.main)
-    console.log(this.state.cache)
     return (
         <Container>
             <h4>Statistics</h4>
